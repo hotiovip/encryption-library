@@ -3,22 +3,25 @@ using System.Text;
 
 namespace Hotiovip.EncryptionLibrary
 {
+    /// <summary>
+    /// Static class for calling the various AES related methods.
+    /// </summary>
     public static class AesEncryptor
     {
         /// <summary>
         /// Encrypts a normal string using the AES Algorithm.
         /// </summary>
-        /// <param name="textToEncrypt">String/Text to encrypt.</param>
-        /// <param name="key">Secret Key to encrypt/decrypt the string.</param>
-        /// <param name="IV">Initialization vector.</param>
-        /// <returns>The encrypted text as a bytes array.</returns>
+        /// <param name="text">String/Text to encrypt</param>
+        /// <param name="password">Password to encrypt the text with</param>
+        /// <param name="encryptionMethod">Encryption method to encrypt with</param>
+        /// <returns>The encrypted text as a string</returns>
         public static string Encrypt(string text, string password, EncryptionMethod encryptionMethod)
         {
             using (var aes = Aes.Create())
             {
                 aes.GenerateIV();
-                byte[] salt = GenerateSalt(16);
-                aes.Key = GenerateSecretKey(password, salt, encryptionMethod);
+                byte[] salt = General.GenerateSalt(16);
+                aes.Key = General.GenerateSecretKey(password, salt, encryptionMethod);
 
                 using (var encryptor = aes.CreateEncryptor(aes.Key, aes.IV))
                 {
@@ -30,10 +33,10 @@ namespace Hotiovip.EncryptionLibrary
         /// <summary>
         /// Decrypts a normal string using the AES Algorithm.
         /// </summary>
-        /// <param name="textToDecrypt">Byte array to decrypt.</param>
-        /// <param name="key">Secret Key to encrypt/decrypt the string.</param>
-        /// <param name="IV">Initialization vector.</param>
-        /// <returns>The decrypted text as a string.</returns>
+        /// <param name="text">String/Text to decrypt</param>
+        /// <param name="password">Password to decrypt the text with</param>
+        /// <param name="encryptionMethod">Encryption method to decrypt with</param>
+        /// <returns>The decrypted text as a string</returns>
         public static string Decrypt(string text, string password, EncryptionMethod encryptionMethod)
         {
             try
@@ -48,7 +51,7 @@ namespace Hotiovip.EncryptionLibrary
                     byte[] encryptedText = byteText.Skip(32).ToArray();
 
                     aes.IV = iv;
-                    aes.Key = GenerateSecretKey(password, salt, encryptionMethod);
+                    aes.Key = General.GenerateSecretKey(password, salt, encryptionMethod);
 
                     using (var decryptor = aes.CreateDecryptor(aes.Key, aes.IV))
                     {
@@ -70,31 +73,5 @@ namespace Hotiovip.EncryptionLibrary
                 throw new Exception("An unexpected error occurred during decryption.", ex);
             }
         }
-
-        /// <summary>
-        /// Generates the secret key based on a given password.
-        /// </summary>
-        /// <param name="password">Password.</param>
-        /// <returns>Secret key as a byte array.</returns>
-        private static byte[] GenerateSecretKey(string password, byte[] salt, EncryptionMethod encryptionMethod)
-        {
-            using (var rfc2898DeriveBytes = new Rfc2898DeriveBytes(password, salt, 10000, HashAlgorithmName.SHA512))
-            {
-                if (encryptionMethod.Equals(EncryptionMethod.AES256))
-                {
-                    return rfc2898DeriveBytes.GetBytes(32);
-                }
-                else
-                {
-                    return rfc2898DeriveBytes.GetBytes(16);
-                }
-            }
-        }
-        /// <summary>
-        /// Generates a random salt (byte array) of the given size.
-        /// </summary>
-        /// <param name="size"></param>
-        /// <returns></returns>
-        private static byte[] GenerateSalt(int size) => RandomNumberGenerator.GetBytes(size);
     }
 }
